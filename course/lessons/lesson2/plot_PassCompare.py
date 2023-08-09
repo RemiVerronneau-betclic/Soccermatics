@@ -7,6 +7,7 @@ the degree to which passing/possession lead to more goals being scroed and
 how we can identify the strongest areas on the pitch for a team.
 """
 
+
 #importing necessary libraries
 import matplotlib.pyplot as plt
 import numpy as np
@@ -37,13 +38,14 @@ match_ids = df_match["match_id"]
 #empty dataframes 
 passshot_df = pd.DataFrame()
 danger_passes_df = pd.DataFrame()
+shot_window = 15
 #for every game in the tournament
 for idx in match_ids:
     #open event data
     df = parser.event(idx)[0]
     #get home and away team 
     home_team = df_match.loc[df_match["match_id"] == idx]["home_team_name"].iloc[0]
-    away_team = df_match.loc[df_match["match_id"] == idx]["away_team_name"].iloc[0]   
+    away_team = df_match.loc[df_match["match_id"] == idx]["away_team_name"].iloc[0]
     #for both teams
     for team in [home_team, away_team]:
         #declare variables to sum shots, passes and danger passes from both halves
@@ -61,7 +63,6 @@ for idx in match_ids:
             shot_df = df.loc[mask_shot, ["minute", "second"]]
             #convert time to seconds
             shot_times = shot_df['minute']*60+shot_df['second']
-            shot_window = 15  
             #find starts of the window
             shot_start = shot_times - shot_window
             #condition to avoid negative shot starts
@@ -71,10 +72,10 @@ for idx in match_ids:
             #check if pass is in any of the windows for this half
             pass_to_shot = pass_times.apply(lambda x: True in ((shot_start < x) & (x < shot_times)).unique())
             danger_passes_period = pass_df.loc[pass_to_shot]
-            
+
             #will need later all danger passes
             danger_passes_df = pd.concat([danger_passes_df, danger_passes_period], ignore_index = True)
-            
+
             #adding number of passes, shots and danger passes from a game 
             passes += len(pass_df)
             shots += len(shot_df)
@@ -134,14 +135,14 @@ ax.set_xlabel('Passes (x)')
 ax.set_ylabel('Shots (y)')
 
 #changing datatype for smf
-passshot_df['Shots']= pd.to_numeric(passshot_df['Shots']) 
-passshot_df['Passes']= pd.to_numeric(passshot_df['Passes']) 
+passshot_df['Shots']= pd.to_numeric(passshot_df['Shots'])
+passshot_df['Passes']= pd.to_numeric(passshot_df['Passes'])
 passshot_df['Goals']= pd.to_numeric(passshot_df['Goals']) 
 
 #fit the model
 model_fit=smf.ols(formula='Shots ~ Passes', data=passshot_df[['Shots','Passes']]).fit()
 #print summary
-print(model_fit.summary())        
+print(model_fit.summary())
 #get coefficients
 b = model_fit.params
 #plot line 
@@ -150,7 +151,7 @@ y = b[0] + b[1]*x
 ax.plot(x, y, linestyle='-', color='black')
 #make legend
 ax.set_ylim(0,40)
-ax.set_xlim(0,800) 
+ax.set_xlim(0,800)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 plt.show()
@@ -191,7 +192,7 @@ y = np.exp(b[0] + b[1]*x)
 ax.plot(x, y, linestyle='-', color='black')
 #make legend
 ax.set_ylim(0,15)
-ax.set_xlim(0,550) 
+ax.set_xlim(0,550)
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
 plt.show()
@@ -236,8 +237,8 @@ for team in teams:
     hist_dict[team]["statistic"] = hist_dict[team]["statistic"] - avg_hist
 
 #preparing colormap
-vmax = max([np.amax(v["statistic"]) for k,v in hist_dict.items()])
-vmin = min([np.amin(v["statistic"]) for k,v in hist_dict.items()])
+vmax = max(np.amax(v["statistic"]) for k,v in hist_dict.items())
+vmin = min(np.amin(v["statistic"]) for k,v in hist_dict.items())
 divnorm = colors.TwoSlopeNorm(vmin=vmin, vcenter=0, vmax=vmax)
 #for each player
 for team, ax in zip(teams, axs['pitch'].flat):
@@ -246,14 +247,14 @@ for team, ax in zip(teams, axs['pitch'].flat):
             ha='center', va='center', fontsize=24)
     #plot colormap
     pcm  = pitch.heatmap(hist_dict[team], ax=ax, cmap='coolwarm', norm = divnorm, edgecolor='grey')
-    
+
 #make legend 
 ax_cbar = fig.add_axes((0.94, 0.093, 0.02, 0.77))
 cbar = plt.colorbar(pcm, cax=ax_cbar, ticks=[-1.5, -1, -0.5, 0, 1, 2, 3])
-cbar.ax.tick_params(labelsize=30)    
+cbar.ax.tick_params(labelsize=30)
 ax_cbar.yaxis.set_ticks_position('left')
 #add title
-axs['title'].text(0.5, 0.5, 'Danger passes per game - performance above zone average', ha='center', va='center', fontsize=60)    
+axs['title'].text(0.5, 0.5, 'Danger passes per game - performance above zone average', ha='center', va='center', fontsize=60)
 plt.show() 
     
    

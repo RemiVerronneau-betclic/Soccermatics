@@ -34,28 +34,28 @@ def calc_player_velocities(team, smoothing=True, filter_='Savitzky-Golay', windo
     """
     # remove any velocity data already in the dataframe
     team = remove_player_velocities(team)
-    
+
     # Get the player ids
     player_ids = np.unique( [ c[:-2] for c in team.columns if c[:4] in ['Home','Away'] ] )
 
     # Calculate the timestep from one frame to the next. Should always be 0.04 within the same half
     dt = team['Time [s]'].diff()
-    
+
     # index of first frame in second half
     second_half_idx = team.Period.idxmax()
-    
+
     # estimate velocities for players in team
     for player in player_ids: # cycle through players individually
         # difference player positions in timestep dt to get unsmoothed estimate of velicity
-        vx = team[player+"_x"].diff() / dt
-        vy = team[player+"_y"].diff() / dt
+        vx = team[f"{player}_x"].diff() / dt
+        vy = team[f"{player}_y"].diff() / dt
 
         if maxspeed>0:
             # remove unsmoothed data points that exceed the maximum speed (these are most likely position errors)
             raw_speed = np.sqrt( vx**2 + vy**2 )
             vx[ raw_speed>maxspeed ] = np.nan
             vy[ raw_speed>maxspeed ] = np.nan
-            
+
         if smoothing:
             if filter_=='Savitzky-Golay':
                 # calculate first half velocity
@@ -72,12 +72,12 @@ def calc_player_velocities(team, smoothing=True, filter_='Savitzky-Golay', windo
                 # calculate second half velocity
                 vx.loc[second_half_idx:] = np.convolve( vx.loc[second_half_idx:] , ma_window, mode='same' ) 
                 vy.loc[second_half_idx:] = np.convolve( vy.loc[second_half_idx:] , ma_window, mode='same' ) 
-                
-        
+
+
         # put player speed in x,y direction, and total speed back in the data frame
-        team[player + "_vx"] = vx
-        team[player + "_vy"] = vy
-        team[player + "_speed"] = np.sqrt( vx**2 + vy**2 )
+        team[f"{player}_vx"] = vx
+        team[f"{player}_vy"] = vy
+        team[f"{player}_speed"] = np.sqrt( vx**2 + vy**2 )
 
     return team
 

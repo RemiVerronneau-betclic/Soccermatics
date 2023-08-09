@@ -14,12 +14,13 @@ match_ids = df_match.loc[(df_match["home_team_name"] == team) | (df_match["away_
 #declare an empty dataframe
 danger_passes = pd.DataFrame()
 names = []
+shot_window = 15
 for idx in match_ids:
     #open the event data from this game 
     df = parser.event(idx)[0]
     for period in [1, 2]:
         #keep only accurate passes by Sweden that were not set pieces in this period
-        mask_pass = (df.type_name == "Pass") & (df.outcome_name.isnull()) & (df.period == period) & (df.sub_type_name.isnull()) 
+        mask_pass = (df.type_name == "Pass") & (df.outcome_name.isnull()) & (df.period == period) & (df.sub_type_name.isnull())
         #keep only necessary columns
         passes = df.loc[mask_pass, ["x", "y", "end_x", "end_y", "minute", "second", "player_name", "match_id"]]
         #keep only Shots by Sweden in this period
@@ -28,7 +29,6 @@ for idx in match_ids:
         shots = df.loc[mask_shot, ["minute", "second"]]
         #convert time to seconds
         shot_times = shots['minute']*60+shots['second']
-        shot_window = 15  
         #find starts of the window
         shot_start = shot_times - shot_window
         #condition to avoid negative shot starts
@@ -41,8 +41,8 @@ for idx in match_ids:
         danger_passes_period = passes.loc[pass_to_shot]
         #concatenate dataframe with a previous one to keep danger passes from the whole tournament
         danger_passes = pd.concat([danger_passes, danger_passes_period])
-        
-        
+
+
 #count passes by player and normalize them
 pass_count = danger_passes.groupby(["player_name"]).x.count()
 #finding the player who had the highest number of danger passes
@@ -52,12 +52,11 @@ name = pass_count.idxmax()
 #keeping only their danger passes
 player_df = danger_passes.loc[danger_passes["player_name"] == name]
 
-#number of games 
-no_games = 0
-for idx in match_ids:
-    if name in parser.event(idx)[0]["player_name"].unique():
-        no_games += 1
-        
+no_games = sum(
+    1
+    for idx in match_ids
+    if name in parser.event(idx)[0]["player_name"].unique()
+)
 #plotting heatmap
 #plot vertical pitch
 pitch = Pitch(line_zorder=2, line_color='black')

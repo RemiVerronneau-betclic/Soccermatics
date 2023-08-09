@@ -15,12 +15,13 @@ no_games = len(match_ids)
 
 #declare an empty dataframe
 danger_passes = pd.DataFrame()
+shot_window = 15
 for idx in match_ids:
     #open the event data from this game 
     df = parser.event(idx)[0]
     for period in [1, 2]:
         #keep only accurate passes by England that were not set pieces in this period
-        mask_pass = (df.team_name == team) & (df.type_name == "Pass") & (df.outcome_name.isnull()) & (df.period == period) & (df.sub_type_name.isnull()) 
+        mask_pass = (df.team_name == team) & (df.type_name == "Pass") & (df.outcome_name.isnull()) & (df.period == period) & (df.sub_type_name.isnull())
         #keep only necessary columns
         passes = df.loc[mask_pass, ["x", "y", "end_x", "end_y", "minute", "second", "player_name"]]
         #keep only Shots by England in this period
@@ -30,7 +31,6 @@ for idx in match_ids:
         shots = shots.loc[shots["shot_statsbomb_xg"] > 0.07]
         #convert time to seconds
         shot_times = shots['minute']*60+shots['second']
-        shot_window = 15  
         #find starts of the window
         shot_start = shot_times - shot_window
         #condition to avoid negative shot starts
@@ -56,5 +56,5 @@ pcm  = pitch.heatmap(bin_statistic, cmap='Reds', edgecolor='grey', ax=ax['pitch'
 #legend to our plot
 ax_cbar = fig.add_axes((1, 0.093, 0.03, 0.786))
 cbar = plt.colorbar(pcm, cax=ax_cbar)
-fig.suptitle('Danger passes by ' + team + " per game", fontsize = 30)
+fig.suptitle(f'Danger passes by {team} per game', fontsize = 30)
 plt.show()

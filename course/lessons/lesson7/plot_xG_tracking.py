@@ -20,11 +20,12 @@ We will train a shallow neural network with following features
 - binary variable signifying if shot was a header
 - expected goals based on distance to goal and angle between the ball and the goal
 """
+
 #importing necessary libraries
 from mplsoccer import Sbopen
 import pandas as pd
 import numpy as np
-import warnings 
+import warnings
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 import matplotlib.pyplot as plt
@@ -66,17 +67,17 @@ for match in matches:
     df_track = parser.event(match)[2]
     #get shots
     shots = df_event.loc[df_event["type_name"] == "Shot"]
-    shots.x = shots.x.apply(lambda cell: cell*105/120)
-    shots.y = shots.y.apply(lambda cell: cell*68/80)
-    df_track.x = df_track.x.apply(lambda cell: cell*105/120)
-    df_track.y = df_track.y.apply(lambda cell: cell*68/80)
+    shots.x = shots.x * 105 / 120
+    shots.y = shots.y * 68 / 80
+    df_track.x = df_track.x * 105 / 120
+    df_track.y = df_track.y * 68 / 80
     #append event and trackings to a dataframe
     shot_df = pd.concat([shot_df, shots], ignore_index = True)
     track_df = pd.concat([track_df, df_track], ignore_index = True)
 
 #reset indicies    
-shot_df.reset_index(drop=True, inplace=True)    
-track_df.reset_index(drop=True, inplace=True)  
+shot_df.reset_index(drop=True, inplace=True)
+track_df.reset_index(drop=True, inplace=True)
 #filter out non open-play shots  
 shot_df = shot_df.loc[shot_df["sub_type_name"] == "Open Play"]
 #filter out shots where goalkeeper was not tracked
@@ -99,7 +100,7 @@ model_vars["goal_smf"] = model_vars["goal"].astype(object)
 # ball location (x)
 model_vars['x0'] = model_vars.x
 # x to calculate angle and distance
-model_vars["x"] = model_vars.x.apply(lambda cell: 105-cell)
+model_vars["x"] = 105 - model_vars.x
 # c to calculate angle and distance between ball and the goal as in Lesson 2
 model_vars["c"] = model_vars.y.apply(lambda cell: abs(34-cell))
 #calculating angle and distance as in Lesson 2
@@ -113,11 +114,10 @@ def params(df):
     #print summary
     return test_model.params
 def calculate_xG(sh, b):
-   bsum=b[0]
-   for i,v in enumerate(["angle", "distance"]):
-       bsum=bsum+b[i+1]*sh[v]
-   xG = 1/(1+np.exp(bsum))
-   return xG
+    bsum=b[0]
+    for i,v in enumerate(["angle", "distance"]):
+        bsum=bsum+b[i+1]*sh[v]
+    return 1/(1+np.exp(bsum))
 
 #expected goals based on distance to goal and angle between the ball and the goal
 b = params(model_vars)
@@ -258,7 +258,7 @@ history = model.fit(X_train, y_train, validation_data=(X_val, y_val), epochs=100
 
 fig, axs = plt.subplots(2, figsize=(10,12))
 #plot training history - accuracy
-axs[0].plot(history.history['accuracy'], label='train')   
+axs[0].plot(history.history['accuracy'], label='train')
 axs[0].plot(history.history['val_accuracy'], label='validation')
 axs[0].set_title("Accuracy at each epoch")
 axs[0].set_xlabel("Epoch")
@@ -266,7 +266,7 @@ axs[0].set_ylabel("Accuracy")
 axs[0].legend()
 
 #plot training history - loss function
-axs[1].plot(history.history['loss'], label='train')   
+axs[1].plot(history.history['loss'], label='train')
 axs[1].plot(history.history['val_loss'], label='validation')
 axs[1].legend()
 axs[1].set_title("Loss at each epoch")
@@ -324,16 +324,16 @@ for match in matches2:
     df_event = parser.event(match)[0]
     df_track = parser.event(match)[2]
     shots = df_event.loc[df_event["type_name"] == "Shot"]
-    shots.x = shots.x.apply(lambda cell: cell*105/120)
-    shots.y = shots.y.apply(lambda cell: cell*68/80)
-    df_track.x = df_track.x.apply(lambda cell: cell*105/120)
-    df_track.y = df_track.y.apply(lambda cell: cell*68/80)
-    
+    shots.x = shots.x * 105 / 120
+    shots.y = shots.y * 68 / 80
+    df_track.x = df_track.x * 105 / 120
+    df_track.y = df_track.y * 68 / 80
+
     shot_df2 = pd.concat([shot_df2, shots], ignore_index = True)
     track_df2 = pd.concat([track_df2, df_track], ignore_index = True)
 
 #reset indicies and remove shots that were not open play or when the goalkeeper was not tracked
-shot_df2 = shot_df2.loc[shot_df2["sub_type_name"] == "Open Play"]   
+shot_df2 = shot_df2.loc[shot_df2["sub_type_name"] == "Open Play"]
 shot_df2.reset_index(drop=True, inplace=True)
 track_df2.reset_index(drop=True, inplace=True)
 gks_tracked2 = track_df2.loc[track_df2["teammate"] == False].loc[track_df2["position_name"] == "Goalkeeper"]['id'].unique()
@@ -344,7 +344,7 @@ model_vars2 = shot_df2[["id", "index", "x", "y"]]
 model_vars2["goal"] = shot_df2.outcome_name.apply(lambda cell: 1 if cell == "Goal" else 0)
 model_vars2["goal_smf"] = model_vars2["goal"].astype(object)
 model_vars2['x0'] = model_vars2.x
-model_vars2["x"] = model_vars2.x.apply(lambda cell: 105-cell)
+model_vars2["x"] = 105 - model_vars2.x
 model_vars2["c"] = model_vars2.y.apply(lambda cell: abs(34-cell))
 model_vars2["angle"] = np.where(np.arctan(7.32 * model_vars2["x"] / (model_vars2["x"]**2 + model_vars2["c"]**2 - (7.32/2)**2)) >= 0, np.arctan(7.32 * model_vars2["x"] /(model_vars2["x"]**2 + model_vars2["c"]**2 - (7.32/2)**2)), np.arctan(7.32 * model_vars2["x"] /(model_vars2["x"]**2 + model_vars2["c"]**2 - (7.32/2)**2)) + np.pi)*180/np.pi
 model_vars2["distance"] = np.sqrt(model_vars2["x"]**2 + model_vars2["c"]**2)

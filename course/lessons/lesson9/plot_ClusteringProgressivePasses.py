@@ -3,10 +3,11 @@ Clustering progressive passes
 =========================================
 In this tutorial we show how to cluster progressive passes using KMeans clustering. 
 """
+
 #importing necessary libraries
 import pandas as pd
 import numpy as np
-import warnings 
+import warnings
 import matplotlib.pyplot as plt
 from mplsoccer import Pitch
 import os
@@ -23,12 +24,12 @@ warnings.filterwarnings('ignore')
 
 df = pd.DataFrame()
 for i in range(13):
-    file_name = 'events_England_' + str(i+1) + '.json'
+    file_name = f'events_England_{str(i + 1)}.json'
     path = os.path.join(str(pathlib.Path().resolve().parents[0]), 'data', 'Wyscout', file_name)
     with open(path) as f:
         data = json.load(f)
     df = pd.concat([df, pd.DataFrame(data)])
-    
+
 ##############################################################################
 # Preparing the dataset
 # ----------------------------
@@ -68,14 +69,11 @@ def is_progressive(x, y, end_x, end_y):
     thres = 100
     if x < 52.5 and end_x < 52.5:
         thres = 30
-    elif x < 52.5 and end_x >= 52.5:
+    elif x < 52.5:
         thres = 15
-    elif x >= 52.5 and end_x >= 52.5:
+    elif end_x >= 52.5:
         thres = 10
-    if thres > start_dist - end_dist:
-        return False
-    else:
-        return True
+    return thres <= start_dist - end_dist
 
 passes["is_progressive"] = passes.apply(lambda row : is_progressive(row['x'], row['y'], row['end_x'], row['end_y']), axis = 1)
 
@@ -152,7 +150,7 @@ plt.xlabel('k')
 
 
 k = 9
-cluster = KMeans(n_clusters = int(k), random_state = 2147)
+cluster = KMeans(n_clusters=k, random_state = 2147)
 labels = cluster.fit_predict(X)
 
 united_progressive["label"] = labels
@@ -165,8 +163,14 @@ fig, axs = pitch.grid(ncols = 3, nrows = 3, grid_height=0.85, title_height=0.06,
 #for each player
 for clust, ax in zip(np.linspace(0, k-1, k), axs['pitch'].flat[:k]):
     #put player name over the plot
-    ax.text(52.5, 74, "Cluster " + str(int(clust+1)),
-            ha='center', va='center', fontsize=18)
+    ax.text(
+        52.5,
+        74,
+        f"Cluster {int(clust + 1)}",
+        ha='center',
+        va='center',
+        fontsize=18,
+    )
     #take only passes by this player
     clustered = united_progressive.loc[united_progressive["label"] == clust]
     #scatter

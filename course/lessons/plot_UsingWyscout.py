@@ -4,6 +4,7 @@ Using Wyscout
 
 Getting familiar with Wyscout data
 """
+
 #importing necessary libraries
 import pathlib
 import os
@@ -85,7 +86,7 @@ df_players.info()
 df_events = pd.DataFrame() # put # in front if used locally
 for i in range(13): # put # in front if used locally
     #get file name and path to it
-    file_name = 'events_England_' + str(i+1) + '.json' # put # in front if used locally
+    file_name = f'events_England_{str(i + 1)}.json'
     path = os.path.join(str(pathlib.Path().resolve()), 'data', 'Wyscout', file_name) # put # in front if used locally
     #open data
     with open(path) as f: # put # in front if used locally
@@ -94,9 +95,6 @@ for i in range(13): # put # in front if used locally
     df_events = pd.concat([df_events, pd.DataFrame(data)]) # put # in front if used locally
 
 
-#path = os.path.join(str(pathlib.Path().resolve()), 'Wyscout', 'events_England_.json') # delete #
-#with open(path) as f: # delete #
-    #data = json.load(f) # delete #
 #df_events = pd.DataFrame(data) # delete #
 
 #structure of data

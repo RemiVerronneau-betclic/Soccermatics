@@ -27,8 +27,7 @@ def read_event_data(DATADIR,game_id):
     read Metrica event data  for game_id and return as a DataFrame
     '''
     eventfile = 'Sample_Game_%d/Sample_Game_%d_RawEventsData.csv' % (game_id,game_id) # filename
-    events = pd.read_csv('{}/{}'.format(DATADIR, eventfile)) # read data
-    return events
+    return pd.read_csv(f'{DATADIR}/{eventfile}')
 
 def tracking_data(DATADIR,game_id,teamname):
     '''
@@ -38,21 +37,21 @@ def tracking_data(DATADIR,game_id,teamname):
     '''
     teamfile = 'Sample_Game_%d/Sample_Game_%d_RawTrackingData_%s_Team.csv' % (game_id,game_id,teamname)
     # First:  deal with file headers so that we can get the player names correct
-    csvfile =  open('{}/{}'.format(DATADIR, teamfile), 'r') # create a csv file reader
-    reader = csv.reader(csvfile) 
+    csvfile = open(f'{DATADIR}/{teamfile}', 'r')
+    reader = csv.reader(csvfile)
     teamnamefull = next(reader)[3].lower()
-    print("Reading team: %s" % teamnamefull)
+    print(f"Reading team: {teamnamefull}")
     # construct column names
     jerseys = [x for x in next(reader) if x != ''] # extract player jersey numbers from second row
     columns = next(reader)
     for i, j in enumerate(jerseys): # create x & y position column headers for each player
-        columns[i*2+3] = "{}_{}_x".format(teamname, j)
-        columns[i*2+4] = "{}_{}_y".format(teamname, j)
+        columns[i*2+3] = f"{teamname}_{j}_x"
+        columns[i*2+4] = f"{teamname}_{j}_y"
     columns[-2] = "ball_x" # column headers for the x & y positions of the ball
     columns[-1] = "ball_y"
-    # Second: read in tracking data and place into pandas Dataframe
-    tracking = pd.read_csv('{}/{}'.format(DATADIR, teamfile), names=columns, index_col='Frame', skiprows=3)
-    return tracking
+    return pd.read_csv(
+        f'{DATADIR}/{teamfile}', names=columns, index_col='Frame', skiprows=3
+    )
 
 def merge_tracking_data(home,away):
     '''

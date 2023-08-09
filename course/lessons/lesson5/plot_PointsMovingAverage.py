@@ -5,6 +5,7 @@ Investigate Points Moving Average
 """
 
 
+
 #importing necessary libraries
 import pandas as pd
 import numpy as np
@@ -25,16 +26,16 @@ seasonst = []
 for year in range(16,22,1):
     #create a string with season name
     if year<9:
-        yeartext='0'+str(year)+'0'+str(year+1)
-        yeartext2='0'+str(year)+'-0'+str(year+1)
+        yeartext = f'0{str(year)}0{str(year + 1)}'
+        yeartext2 = f'0{str(year)}-0{str(year + 1)}'
     elif year==9:
         yeartext='0910'
         yeartext2='09-10'
     else:
         yeartext=str(year)+str(year+1)
-        yeartext2=str(year)+'-'+str(year+1)
+        yeartext2 = f'{str(year)}-{str(year + 1)}'
     #get data from webpage
-    performance_year = pd.read_csv("https://www.football-data.co.uk/mmz4281/"+yeartext+"/E0.csv",delimiter=',') 
+    performance_year = pd.read_csv("https://www.football-data.co.uk/mmz4281/"+yeartext+"/E0.csv",delimiter=',')
     #append season name
     seasonst.append(yeartext2)
     #make list of dataframes
@@ -53,16 +54,13 @@ performance = pd.concat(dflist).reset_index()
 teams = ['Man City', 'Liverpool', 'Arsenal', 'Chelsea', 'Tottenham', 'Man United']
 
 #dictionary to store data
-team_dfs = dict()
+team_dfs = {}
 for team in teams:
     #empty dataframe
     team_df = pd.DataFrame(columns = ["Points", "Date", "Game"])
     #get matches by this team 
     matches = performance.loc[(performance['AwayTeam'] == team) | (performance['HomeTeam'] == team)]
-    #auxilliary variable that will be helpful to plot
-    game = 0
-    for i, match in matches.iterrows():
-        game +=1
+    for game, (i, match) in enumerate(matches.iterrows(), start=1):
         #if team was away
         if match['AwayTeam'] == team:
             #get goals for both teams 
