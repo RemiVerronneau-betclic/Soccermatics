@@ -14,7 +14,7 @@ import pathlib
 
 train = pd.DataFrame()
 for i in range(13):
-    file_name = 'events_England_' + str(i+1) + '.json'
+    file_name = f'events_England_{str(i + 1)}.json'
     path = os.path.join(str(pathlib.Path().resolve().parents[1]), 'data', 'Wyscout', file_name)
     with open(path) as f:
         data = json.load(f)

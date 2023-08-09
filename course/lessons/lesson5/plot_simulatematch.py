@@ -8,6 +8,7 @@ during the match.
 
 """
 
+
 import numpy as np
 import numpy.random as rnd
 import time
@@ -37,8 +38,7 @@ print('The probability of a goal per minute is %5.5f. \n' % prob_per_minute )
 #Count of the number of goals
 goals=0
 
-for minute in range(match_minutes):
-
+for _ in range(match_minutes):
   #Generate a random number between 0 and 1.
   r=rnd.rand(1,1)
 
@@ -77,13 +77,13 @@ def simulateMatch(n, p):
   # Count the number of goals
   goals = 0
 
-  for minute in range(n):
-      # Generate a random number between 0 and 1.
-      r = rnd.rand(1, 1)
-      # Prints an X when there is a goal and a zero otherwise.
-      if (r < p):
-        # Goal - if the random number is less than the goal probability.
-        goals = goals + 1
+  for _ in range(n):
+    # Generate a random number between 0 and 1.
+    r = rnd.rand(1, 1)
+    # Prints an X when there is a goal and a zero otherwise.
+    if (r < p):
+      # Goal - if the random number is less than the goal probability.
+      goals = goals + 1
 
   return goals
 

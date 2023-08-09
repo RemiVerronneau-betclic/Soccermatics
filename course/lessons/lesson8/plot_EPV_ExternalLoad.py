@@ -7,6 +7,7 @@ In this tutorial we will model the relationship between EPV added and distance c
 provided for `Friends of Tracking <https://www.youtube.com/channel/UCUBFJYcag8j2rm_9HkrrA7w>`_. 
 """
 
+
 import Metrica_IO as mio
 import Metrica_Viz as mviz
 import Metrica_Velocities as mvel
@@ -48,7 +49,9 @@ GK_numbers = [mio.find_goalkeeper(tracking_home),mio.find_goalkeeper(tracking_aw
 home_attack_direction = mio.find_playing_direction(tracking_home,'Home') # 1 if shooting left-right, else -1
 
 #Set some global variables
-player_ids = np.unique(list(c[:-2] for c in tracking_home.columns if c[:4] in ['Home', 'Away']))
+player_ids = np.unique(
+    [c[:-2] for c in tracking_home.columns if c[:4] in ['Home', 'Away']]
+)
 maxspeed = 12
 dt = tracking_home['Time [s]'].diff()
 second_half_idx = tracking_home.Period.idxmax()
@@ -58,8 +61,12 @@ tracking_home = mvel.calc_player_velocities(tracking_home, smoothing=True)
 tracking_away = mvel.calc_player_velocities(tracking_away, smoothing=True)
 
 #Obtain the Unique Players
-home_players = np.unique(list(c.split('_')[1] for c in tracking_home.columns if c[:4] == 'Home'))
-away_players = np.unique(list(c.split('_')[1] for c in tracking_away.columns if c[:4] == 'Away'))
+home_players = np.unique(
+    [c.split('_')[1] for c in tracking_home.columns if c[:4] == 'Home']
+)
+away_players = np.unique(
+    [c.split('_')[1] for c in tracking_away.columns if c[:4] == 'Away']
+)
 
 ##############################################################################
 # Calculate values for each home team's possession chain
@@ -70,7 +77,7 @@ away_players = np.unique(list(c.split('_')[1] for c in tracking_away.columns if 
 params = mpc.default_model_params()
 
 #load epv
-EPV = mepv.load_EPV_grid(DATADIR+'/EPV_grid.csv')
+EPV = mepv.load_EPV_grid(f'{DATADIR}/EPV_grid.csv')
 
 #get all possession chains
 pass_events = events[events['Type'] == 'PASS']

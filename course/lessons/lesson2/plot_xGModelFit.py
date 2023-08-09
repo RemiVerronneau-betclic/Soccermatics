@@ -25,6 +25,7 @@ But the steps are the same.
 """
 
 
+
 # importing necessary libraries
 import pandas as pd
 import numpy as np
@@ -52,12 +53,12 @@ warnings.filterwarnings('ignore')
 #load data - store it in train dataframe
 train = pd.DataFrame()
 for i in range(13):
-    file_name = 'events_England_' + str(i+1) + '.json'
+    file_name = f'events_England_{str(i + 1)}.json'
     path = os.path.join(str(pathlib.Path().resolve().parents[0]), 'data', 'Wyscout', file_name)
     with open(path) as f:
         data = json.load(f)
     train = pd.concat([train, pd.DataFrame(data)])
-      
+
 ##############################################################################
 # Preparing  data
 # ----------------------------
@@ -155,7 +156,7 @@ fig,ax = plt.subplots()
 plt.ylim((-0.05,1.05))
 plt.xlim((0,5))
 ax.set_ylabel('y')
-ax.set_xlabel("x") 
+ax.set_xlabel("x")
 ax.plot(x, y, linestyle='solid', color='black')
 ax.spines['top'].set_visible(False)
 ax.spines['right'].set_visible(False)
@@ -215,7 +216,7 @@ plt.show()
 fig, ax = plt.subplots()
 b = [3, -3]
 x = np.arange(150,step=0.1)
-y = 1/(1+np.exp(b[0]+b[1]*x*np.pi/180)) 
+y = 1/(1+np.exp(b[0]+b[1]*x*np.pi/180))
 #plot line
 ax.plot(midangle, prob_goal, linestyle='none', marker= '.', markersize= 12, color='black')
 #plot logistic function
@@ -228,7 +229,7 @@ plt.show()
 # The best parameters are those which maximize the log-likelihood.
 
 #calculate xG
-xG = 1/(1+np.exp(b[0]+b[1]*shots['Angle'])) 
+xG = 1/(1+np.exp(b[0]+b[1]*shots['Angle']))
 shots = shots.assign(xG = xG)
 shots_40 = shots.iloc[:40]
 fig, ax = plt.subplots()
@@ -246,13 +247,13 @@ for item,shot in shots_40.iterrows():
         ax.plot([ang,ang],[shot['Goal'],1-shot['xG']], color='red', zorder = 1)
     else:
         loglikelihood = loglikelihood + np.log(1 - shot['xG'])
-        ax.plot([ang,ang], [shot['Goal'], 1-shot['xG']], color='blue', zorder = 1) 
+        ax.plot([ang,ang], [shot['Goal'], 1-shot['xG']], color='blue', zorder = 1)
 #make legend
 ax.set_ylabel('Goal scored')
 ax.set_xlabel("Shot angle (degrees)")
 plt.ylim((-0.05,1.05))
 plt.xlim((0,180))
-plt.text(120,0.5,'Log-likelihood:') 
+plt.text(120,0.5,'Log-likelihood:')
 plt.text(120,0.4,str(loglikelihood)[:6])
 ax.set_yticks([0,1])
 ax.spines['top'].set_visible(False)
@@ -272,7 +273,7 @@ print(test_model.summary())
 #get params        
 b=test_model.params
 #calculate xG
-xGprob = 1/(1+np.exp(b[0]+b[1]*midangle*np.pi/180)) 
+xGprob = 1/(1+np.exp(b[0]+b[1]*midangle*np.pi/180))
 fig, ax = plt.subplots()
 #plot data
 ax.plot(midangle, prob_goal, linestyle='none', marker= '.', markersize= 12, color='black')
@@ -314,10 +315,10 @@ ax.spines['right'].set_visible(False)
 test_model = smf.glm(formula="Goal ~ Distance" , data=shots, 
                            family=sm.families.Binomial()).fit()
 #print summary
-print(test_model.summary())        
+print(test_model.summary())
 b=test_model.params
 #calculate xG
-xGprob=1/(1+np.exp(b[0]+b[1]*middistance)) 
+xGprob=1/(1+np.exp(b[0]+b[1]*middistance))
 #plot line
 ax.plot(middistance, xGprob, linestyle='solid', color='black')
 plt.show()
@@ -337,11 +338,11 @@ shots["D2"] = shots['Distance']**2
 test_model = smf.glm(formula="Goal ~ Distance + D2" , data=shots, 
                            family=sm.families.Binomial()).fit()
 #print model summary
-print(test_model.summary()) 
+print(test_model.summary())
 #get parameters       
 b=test_model.params
 #calculate xG
-xGprob=1/(1+np.exp(b[0]+b[1]*middistance+b[2]*pow(middistance,2))) 
+xGprob=1/(1+np.exp(b[0]+b[1]*middistance+b[2]*pow(middistance,2)))
 fig, ax = plt.subplots()
 #plot line
 ax.plot(middistance, prob_goal, linestyle='none', marker= '.', color='black')
@@ -376,38 +377,35 @@ model = model + model_variables[-1]
 test_model = smf.glm(formula="Goal ~ " + model, data=shots, 
                            family=sm.families.Binomial()).fit()
 #print summary
-print(test_model.summary())        
+print(test_model.summary())
 b=test_model.params
 
 #return xG value for more general model
 def calculate_xG(sh):    
-   bsum=b[0]
-   for i,v in enumerate(model_variables):
-       bsum=bsum+b[i+1]*sh[v]
-   xG = 1/(1+np.exp(bsum)) 
-   return xG   
+    bsum=b[0]
+    for i,v in enumerate(model_variables):
+        bsum=bsum+b[i+1]*sh[v]
+    return 1/(1+np.exp(bsum))   
 
 #add an xG to my dataframe
-xG=shots.apply(calculate_xG, axis=1) 
+xG=shots.apply(calculate_xG, axis=1)
 shots = shots.assign(xG=xG)
 
 #Create a 2D map of xG
 pgoal_2d=np.zeros((68,68))
 for x in range(68):
     for y in range(68):
-        sh=dict()
         a = np.arctan(7.32 *x /(x**2 + abs(y-68/2)**2 - (7.32/2)**2))
         if a<0:
             a = np.pi + a
-        sh['Angle'] = a
-        sh['Distance'] = np.sqrt(x**2 + abs(y-68/2)**2)
+        sh = {'Angle': a, 'Distance': np.sqrt(x**2 + abs(y-68/2)**2)}
         sh['D2'] = x**2 + abs(y-68/2)**2
         sh['X'] = x
         sh['AX'] = x*a
         sh['X2'] = x**2
         sh['C'] = abs(y-68/2)
         sh['C2'] = (y-68/2)**2
-        
+
         pgoal_2d[x,y] =  calculate_xG(sh)
 
 #plot pitch

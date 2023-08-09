@@ -11,6 +11,7 @@ First watch the video
    :height: 349
 """
 
+
 import numpy as np
 
 
@@ -48,8 +49,8 @@ print(np.transpose(xT1))
 # to update through each move of the ball
 
 
-xT2=np.zeros((3,1))            
-for t in range(10):
+xT2=np.zeros((3,1))
+for _ in range(10):
    #print(np.matmul(A,xT2) + g)
    xT2 = np.matmul(A,xT2) + g
 
@@ -70,43 +71,42 @@ xT3=np.zeros(3)
 description = {0: 'Central', 1: 'Wing', 2: 'Box' }
 
 for i in range(3):
-    num_goals = 0
+   num_goals = 0
 
-    print('---------------')
-    print('Start from ' + description[i] )
-    print('---------------')
+   print('---------------')
+   print(f'Start from {description[i]}')
+   print('---------------')
 
-    for n in range(num_sims):
-        
-        ballinplay=True
-        #Initial state is i
-        s = i
-        describe_possession=''
-        
-        while ballinplay:
-            r=np.random.rand()
-            
+   for _ in range(num_sims):
+      ballinplay=True
+      #Initial state is i
+      s = i
+      describe_possession=''
+
+      while ballinplay:
+         r=np.random.rand()
+
             # Make commentary text
-            describe_possession = describe_possession + ' - ' + description[s]
-            
-            
-            #Cumulative sum of in play probabilities
-            c_sum=np.cumsum(A[s,:])
-            new_s = np.sum(r>c_sum)  
-            if new_s>2:
-                #Ball is either goal or out of play
-                ballinplay=False
-                if r < g[s] + c_sum[0,2]:
-                    #Its a goal!
-                    num_goals = num_goals + 1
-                    describe_possession = describe_possession + ' - Goal!'
-                else:
-                    describe_possession = describe_possession + ' - Out of play'
-            s = new_s  
-            
-        print(describe_possession)  
-            
-    xT3[i] = num_goals/num_sims
+         describe_possession = f'{describe_possession} - {description[s]}'
+                     
+
+         #Cumulative sum of in play probabilities
+         c_sum=np.cumsum(A[s,:])
+         new_s = np.sum(r>c_sum)
+         if new_s>2:
+            #Ball is either goal or out of play
+            ballinplay=False
+            if r < g[s] + c_sum[0,2]:
+               #Its a goal!
+               num_goals = num_goals + 1
+               describe_possession = f'{describe_possession} - Goal!'
+            else:
+               describe_possession = f'{describe_possession} - Out of play'
+         s = new_s  
+
+      print(describe_possession)  
+
+   xT3[i] = num_goals/num_sims
 
 
 print('\n\n---------------')

@@ -5,12 +5,13 @@ Calculating xT (action-based)
 Calculate action based Expected Threat once you have
 found possession chains.
 """
+
 import pandas as pd
 import json
 # plotting
 import os
 import pathlib
-import warnings 
+import warnings
 from joblib import load
 from mplsoccer import Pitch
 from itertools import combinations_with_replacement
@@ -31,7 +32,7 @@ warnings.filterwarnings('ignore')
 
 df = pd.DataFrame()
 for i in range(11):
-    file_name = 'possession_chains_England' + str(i+1) + '.json'
+    file_name = f'possession_chains_England{str(i + 1)}.json'
     path = os.path.join(str(pathlib.Path().resolve().parents[0]), 'possession_chain', file_name)
     with open(path) as f:
         data = json.load(f)
@@ -109,7 +110,7 @@ X = passes[var].values
 y = passes["shot_end"].values
 #path to saved model
 path_model = os.path.join(str(pathlib.Path().resolve().parents[0]), 'possession_chain', 'finalized_model.sav')
-model = load(path_model) 
+model = load(path_model)
 #predict probability of shot ended
 y_pred_proba = model.predict_proba(X)[::,1]
 

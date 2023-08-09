@@ -42,7 +42,7 @@ def plot_pitch( field_dimen = (106.0,68.0), field_color ='green', linewidth=2, m
     meters_per_yard = 0.9144 # unit conversion from yards to meters
     half_pitch_length = field_dimen[0]/2. # length of half pitch
     half_pitch_width = field_dimen[1]/2. # width of half pitch
-    signs = [-1,1] 
+    signs = [-1,1]
     # Soccer field dimensions typically defined in yards, so we need to convert to meters
     goal_line_width = 8*meters_per_yard
     box_width = 20*meters_per_yard
@@ -67,7 +67,13 @@ def plot_pitch( field_dimen = (106.0,68.0), field_color ='green', linewidth=2, m
         ax.plot([-half_pitch_length,half_pitch_length],[s*half_pitch_width,s*half_pitch_width],lc,linewidth=linewidth)
         ax.plot([s*half_pitch_length,s*half_pitch_length],[-half_pitch_width,half_pitch_width],lc,linewidth=linewidth)
         # goal posts & line
-        ax.plot( [s*half_pitch_length,s*half_pitch_length],[-goal_line_width/2.,goal_line_width/2.],pc+'s',markersize=6*markersize/20.,linewidth=linewidth)
+        ax.plot(
+            [s * half_pitch_length, s * half_pitch_length],
+            [-goal_line_width / 2.0, goal_line_width / 2.0],
+            f'{pc}s',
+            markersize=6 * markersize / 20.0,
+            linewidth=linewidth,
+        )
         # 6 yard box
         ax.plot([s*half_pitch_length,s*half_pitch_length-s*box_length],[box_width/2.,box_width/2.],lc,linewidth=linewidth)
         ax.plot([s*half_pitch_length,s*half_pitch_length-s*box_length],[-box_width/2.,-box_width/2.],lc,linewidth=linewidth)
@@ -87,7 +93,7 @@ def plot_pitch( field_dimen = (106.0,68.0), field_color ='green', linewidth=2, m
         y = np.linspace(-1,1,50)*D_length # D_length is the chord of the circle that defines the D
         x = np.sqrt(D_radius**2-y**2)+D_pos
         ax.plot(s*half_pitch_length-s*x,y,lc,linewidth=linewidth)
-        
+
     # remove axis labels and ticks
     ax.set_xticklabels([])
     ax.set_yticklabels([])
@@ -121,21 +127,24 @@ def plot_frame( hometeam, awayteam, figax=None, team_colors=('r','b'), field_dim
     -----------
        fig,ax : figure and aixs objects (so that other data can be plotted onto the pitch)
     """
-    if figax is None: # create new pitch 
-        fig,ax = plot_pitch( field_dimen = field_dimen )
-    else: # overlay on a previously generated pitch
-        fig,ax = figax # unpack tuple
+    fig,ax = plot_pitch( field_dimen = field_dimen ) if figax is None else figax
     # plot home & away teams in order
-    for team,color in zip( [hometeam,awayteam], team_colors) :
+    for team,color in zip( [hometeam,awayteam], team_colors):
         x_columns = [c for c in team.keys() if c[-2:].lower()=='_x' and c!='ball_x'] # column header for player x positions
         y_columns = [c for c in team.keys() if c[-2:].lower()=='_y' and c!='ball_y'] # column header for player y positions
-        ax.plot( team[x_columns], team[y_columns], color+'o', MarkerSize=PlayerMarkerSize, alpha=PlayerAlpha ) # plot player positions
+        ax.plot(
+            team[x_columns],
+            team[y_columns],
+            f'{color}o',
+            MarkerSize=PlayerMarkerSize,
+            alpha=PlayerAlpha,
+        )
         if include_player_velocities:
-            vx_columns = ['{}_vx'.format(c[:-2]) for c in x_columns] # column header for player x positions
-            vy_columns = ['{}_vy'.format(c[:-2]) for c in y_columns] # column header for player y positions
+            vx_columns = [f'{c[:-2]}_vx' for c in x_columns]
+            vy_columns = [f'{c[:-2]}_vy' for c in y_columns]
             ax.quiver( team[x_columns], team[y_columns], team[vx_columns], team[vy_columns], color=color, scale_units='inches', scale=10.,width=0.0015,headlength=5,headwidth=3,alpha=PlayerAlpha)
         if annotate:
-            [ ax.text( team[x]+0.5, team[y]+0.5, x.split('_')[1], fontsize=10, color=color  ) for x,y in zip(x_columns,y_columns) if not ( np.isnan(team[x]) or np.isnan(team[y]) ) ] 
+            [ ax.text( team[x]+0.5, team[y]+0.5, x.split('_')[1], fontsize=10, color=color  ) for x,y in zip(x_columns,y_columns) if not ( np.isnan(team[x]) or np.isnan(team[y]) ) ]
     # plot ball
     ax.plot( hometeam['ball_x'], hometeam['ball_y'], 'ko', MarkerSize=6, alpha=1.0, LineWidth=0)
     return fig,ax
@@ -171,26 +180,29 @@ def save_match_clip(hometeam,awayteam, fpath, fname='clip_test', figax=None, fra
     FFMpegWriter = animation.writers['ffmpeg']
     metadata = dict(title='Tracking Data', artist='Matplotlib', comment='Metrica tracking data clip')
     writer = FFMpegWriter(fps=frames_per_second, metadata=metadata)
-    fname = fpath + '/' +  fname + '.mp4' # path and filename
+    fname = f'{fpath}/{fname}.mp4'
     # create football pitch
-    if figax is None:
-        fig,ax = plot_pitch(field_dimen=field_dimen)
-    else:
-        fig,ax = figax
+    fig,ax = plot_pitch(field_dimen=field_dimen) if figax is None else figax
     fig.set_tight_layout(True)
     # Generate movie
     print("Generating movie...",end='')
     with writer.saving(fig, fname, 100):
         for i in index:
             figobjs = [] # this is used to collect up all the axis objects so that they can be deleted after each iteration
-            for team,color in zip( [hometeam.loc[i],awayteam.loc[i]], team_colors) :
+            for team,color in zip( [hometeam.loc[i],awayteam.loc[i]], team_colors):
                 x_columns = [c for c in team.keys() if c[-2:].lower()=='_x' and c!='ball_x'] # column header for player x positions
                 y_columns = [c for c in team.keys() if c[-2:].lower()=='_y' and c!='ball_y'] # column header for player y positions
-                objs, = ax.plot( team[x_columns], team[y_columns], color+'o', MarkerSize=PlayerMarkerSize, alpha=PlayerAlpha ) # plot player positions
+                (objs,) = ax.plot(
+                    team[x_columns],
+                    team[y_columns],
+                    f'{color}o',
+                    MarkerSize=PlayerMarkerSize,
+                    alpha=PlayerAlpha,
+                )
                 figobjs.append(objs)
                 if include_player_velocities:
-                    vx_columns = ['{}_vx'.format(c[:-2]) for c in x_columns] # column header for player x positions
-                    vy_columns = ['{}_vy'.format(c[:-2]) for c in y_columns] # column header for player y positions
+                    vx_columns = [f'{c[:-2]}_vx' for c in x_columns]
+                    vy_columns = [f'{c[:-2]}_vy' for c in y_columns]
                     objs = ax.quiver( team[x_columns], team[y_columns], team[vx_columns], team[vy_columns], color=color, scale_units='inches', scale=10.,width=0.0015,headlength=5,headwidth=3,alpha=PlayerAlpha)
                     figobjs.append(objs)
             # plot ball
@@ -232,10 +244,7 @@ def plot_events( events, figax=None, field_dimen = (106.0,68), indicators = ['Ma
        fig,ax : figure and aixs objects (so that other data can be plotted onto the pitch)
     """
 
-    if figax is None: # create new pitch 
-        fig,ax = plot_pitch( field_dimen = field_dimen )
-    else: # overlay on a previously generated pitch
-        fig,ax = figax 
+    fig,ax = plot_pitch( field_dimen = field_dimen ) if figax is None else figax
     for i,row in events.iterrows():
         if 'Marker' in indicators:
             ax.plot(  row['Start X'], row['Start Y'], color+marker_style, alpha=alpha )
