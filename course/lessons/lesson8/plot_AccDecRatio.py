@@ -7,6 +7,7 @@ The code is based on Sudarshan "Suds" Gopaladesikan's
 
 """
 
+
 #importing necessary libraries 
 import Metrica_IO as mio
 import Metrica_Velocities as mvel
@@ -58,8 +59,10 @@ home_attack_direction = mio.find_playing_direction(tracking_home,'Home') # 1 if 
 # if we calculate the speed of a player from the camera. Also it is assumed that a 
 # football player should not run faster than 12 m/s.
 
-# Calculate the Player Velocities 
-player_ids = np.unique(list(c[:-2] for c in tracking_home.columns if c[:4] in ['Home', 'Away']))
+# Calculate the Player Velocities
+player_ids = np.unique(
+    [c[:-2] for c in tracking_home.columns if c[:4] in ['Home', 'Away']]
+)
 #impossible to run faster than 12 m/s
 maxspeed = 12
 dt = tracking_home['Time [s]'].diff()
@@ -101,7 +104,9 @@ plt.show()
 # the entire game. Then we make a plot. Star means that the player was either subbed in or subbed off during the game
 
 # get home players
-home_players = np.unique(list(c.split('_')[1] for c in tracking_home.columns if c[:4] == 'Home'))
+home_players = np.unique(
+    [c.split('_')[1] for c in tracking_home.columns if c[:4] == 'Home']
+)
 home_summary = pd.DataFrame(index=home_players)
 
 #calculating minutes played
@@ -124,7 +129,9 @@ for player in home_summary.index:
 home_summary['Distance [km]'] = distance_home
 
 #get away players
-away_players = np.unique(list(c.split('_')[1] for c in tracking_away.columns if c[:4] == 'Away'))
+away_players = np.unique(
+    [c.split('_')[1] for c in tracking_away.columns if c[:4] == 'Away']
+)
 away_summary = pd.DataFrame(index=away_players)
 
 #calculating minutes played
@@ -160,7 +167,7 @@ game_summary_sorted['Player'] = np.where(game_summary_sorted['isSub']==0, game_s
 #make plot
 colors = ['red' for _ in range(len(home_summary))]
 colors.extend(['blue' for _ in range(len(away_summary))])
-color_map = {'Home':'red', 'Away':'blue'}         
+color_map = {'Home':'red', 'Away':'blue'}
 labels = list(color_map.keys())
 handles = [plt.Rectangle((0,0),1,1, color=color_map[label]) for label in labels]
 
@@ -225,7 +232,7 @@ home_acc_dict = {}
 
 for player in home_players:
     #calculate acceleration
-    
+
     tracking_home['Home_' + player + '_Acc'] = tracking_home['Home_' + player + '_speed'].diff() / dt
     #set acceleration condition
     tracking_home['Home_' + player + '_Acc'].loc[np.absolute(tracking_home['Home_' + player + '_Acc']) > maxacc] = np.nan
@@ -234,7 +241,7 @@ for player in home_players:
                                                              "High", "Low")
     tracking_home['Home_' + player + '_Acc_g'] = tracking_home['Home_' + player + '_Acc_type'].ne(
         tracking_home['Home_' + player + '_Acc_type'].shift()).cumsum()
-    
+
     #for each player
     for g in np.unique(tracking_home['Home_' + player + '_Acc_g']):
         acc_temp = tracking_home[tracking_home['Home_' + player + '_Acc_g'] == g]
@@ -309,24 +316,38 @@ def split_at(s, c, n):
 #function to calculate metabolic cost
 def metabolic_cost(acc): #https://jeb.biologists.org/content/221/15/jeb182303
     if acc > 0:
-        cost = 0.102 * ((acc ** 2 + 96.2) ** 0.5) * (4.03 * acc + 3.6 * np.exp(-0.408 * acc))
+        return (
+            0.102
+            * ((acc**2 + 96.2) ** 0.5)
+            * (4.03 * acc + 3.6 * np.exp(-0.408 * acc))
+        )
     elif acc < 0:
-        cost = 0.102 * ((acc ** 2 + 96.2) ** 0.5) * (-0.85 * acc + 3.6 * np.exp(1.33 * acc))
+        return (
+            0.102
+            * ((acc**2 + 96.2) ** 0.5)
+            * (-0.85 * acc + 3.6 * np.exp(1.33 * acc))
+        )
     else:
-        cost = 0
-    return cost
+        return 0
 
 team = tracking_home
 
-playerids = np.unique(list(c[:-2] for c in team.columns if c[:4] in ['Home', 'Away']))
+playerids = np.unique(
+    [c[:-2] for c in team.columns if c[:4] in ['Home', 'Away']]
+)
 playerids = np.unique(list(map(lambda x: split_at(x, '_', 2)[0], playerids)))
 
 fig, ax = plt.subplots(figsize = (10, 6))
 player = 'Home_6'
 #calculate metabolic cost
-mc_temp = list(map(lambda x: metabolic_cost(team[player + '_Acc'][x]), range(1, len(team[player + '_Acc'])+1)))
+mc_temp = list(
+    map(
+        lambda x: metabolic_cost(team[f'{player}_Acc'][x]),
+        range(1, len(team[f'{player}_Acc']) + 1),
+    )
+)
 #multiply it by speed
-mp_temp = mc_temp * team[player+'_speed']
+mp_temp = mc_temp * team[f'{player}_speed']
 #calculate rolling average
 test_mp = mp_temp.rolling(7500,min_periods=1).apply(lambda x : np.nansum(x)) #Use Changepoint Detection Here
 ax.plot(test_mp[7500:])
@@ -340,7 +361,7 @@ plt.show()
 # ----------------------------
 # We will try to identify a correct moment for a player to be substituted. To do so, we will use Binary Segmentation method.
 
-signal = np.array(test_mp[7500:len(test_mp)]).reshape((len(test_mp[7500:len(test_mp)]),1))
+signal = np.array(test_mp[7500:]).reshape((len(test_mp[7500:]), 1))
 algo = rpt.Binseg(model="l2").fit(signal)  ##potentially finding spot where substitution should happen
 result = algo.predict(n_bkps=1)  # big_seg
 rpt.show.display(signal, result, figsize=(10, 6))
@@ -355,9 +376,9 @@ plt.show()
 # To see how player pacing strategy or identify moments in the game that are slower we can use PELT - 
 # lineary penalized segmentation
 
-signal = np.array(test_mp[7500:len(test_mp)]).reshape((len(test_mp[7500:len(test_mp)]),1))
+signal = np.array(test_mp[7500:]).reshape((len(test_mp[7500:]), 1))
 algo = rpt.Pelt(model="l2",min_size=7500).fit(signal)
-result = algo.predict(pen=np.log(len(signal))*1*np.std(signal)**2) 
+result = algo.predict(pen=np.log(len(signal))*1*np.std(signal)**2)
 rpt.show.display(signal, result, figsize=(10, 6))
 plt.title('Metabolic Power Output  - PELT')
 plt.ylabel("Metabolic Power")

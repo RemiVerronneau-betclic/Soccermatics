@@ -4,6 +4,7 @@ Sign test
 In this tutorial we demonstrate how to check equal size of two samples using the sign test. To do so, we provide an example
 in which we check if Heung-Min Son shoots with both feet the same number of times. 
 """
+
 import pandas as pd
 import numpy as np
 import json
@@ -27,12 +28,12 @@ warnings.filterwarnings('ignore')
 #open event data
 train = pd.DataFrame()
 for i in range(13):
-    file_name = 'events_England_' + str(i+1) + '.json'
+    file_name = f'events_England_{str(i + 1)}.json'
     path = os.path.join(str(pathlib.Path().resolve()), 'data', 'Wyscout', file_name)
     with open(path) as f:
         data = json.load(f)
     train = pd.concat([train, pd.DataFrame(data)])
-    
+
     path = os.path.join(str(pathlib.Path().resolve()),"data", 'Wyscout', 'players.json')
 
 #open dataset with players
@@ -49,7 +50,7 @@ player_df = pd.DataFrame(players)
 # In the end, we create a list with ones for shots with his left foot and -1 for shots with his right foot.
 
 #take shots only
-shots = train.loc[train['subEventName'] == 'Shot'] 
+shots = train.loc[train['subEventName'] == 'Shot']
 #look for son's id
 son_id = player_df.loc[player_df["shortName"] == "Son Heung-Min"]["wyId"].iloc[0]
 #get son's shot
@@ -61,7 +62,7 @@ lefty_shots = son_shots.loc[son_shots.apply (lambda x:{'id':401} in x.tags, axis
 righty_shots = son_shots.loc[son_shots.apply (lambda x:{'id':402} in x.tags, axis = 1)]
 
 #create list with ones for left foot shots and -1 for right foot shots   
-l = [1] * len(lefty_shots) 
+l = [1] * len(lefty_shots)
 l.extend([-1] * len(righty_shots))
 
 ##############################################################################

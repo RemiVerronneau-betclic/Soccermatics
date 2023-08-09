@@ -12,6 +12,7 @@ minutes played. Start by watching the video a
 Either work through the code at the same time as watching or afterwards.
 """
 
+
 #importing necessary libraries
 import pandas as pd
 import numpy as np
@@ -30,11 +31,13 @@ import statsmodels.formula.api as smf
 num_obs=20
 laliga_df=pd.read_csv("playerstats.csv",delimiter=',')
 minutes_model = pd.DataFrame()
-minutes_model = minutes_model.assign(minutes=laliga_df['Min'][0:num_obs])
-minutes_model = minutes_model.assign(age=laliga_df['Age'][0:num_obs])
+minutes_model = minutes_model.assign(minutes=laliga_df['Min'][:num_obs])
+minutes_model = minutes_model.assign(age=laliga_df['Age'][:num_obs])
 
 # Make an age squared column so we can fir polynomial model.
-minutes_model = minutes_model.assign(age_squared=np.power(laliga_df['Age'][0:num_obs],2))
+minutes_model = minutes_model.assign(
+    age_squared=np.power(laliga_df['Age'][:num_obs], 2)
+)
 
 
 ##############################################################################
@@ -65,7 +68,7 @@ plt.show()
 #A straight line relationship between minutes played and age.
 
 model_fit=smf.ols(formula='minutes  ~ age   ', data=minutes_model).fit()
-print(model_fit.summary())        
+print(model_fit.summary())
 b=model_fit.params
 
 ##############################################################################
@@ -111,7 +114,7 @@ plt.show()
 
 # First fit the model
 model_fit=smf.ols(formula='minutes  ~ age + age_squared  ', data=minutes_model).fit()
-print(model_fit.summary())        
+print(model_fit.summary())
 b=model_fit.params
 
 # Compare the fit 

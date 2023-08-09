@@ -21,6 +21,7 @@ We add tho these our own calculations of,
 
 """
 
+
 import pandas as pd
 import numpy as np
 import json
@@ -32,7 +33,7 @@ import statsmodels.formula.api as smf
 #opening data
 import os
 import pathlib
-import warnings 
+import warnings
 #used for plots
 from scipy import stats
 from mplsoccer import PyPizza, FontManager
@@ -49,7 +50,7 @@ warnings.filterwarnings('ignore')
 
 train = pd.DataFrame()
 for i in range(13):
-    file_name = 'events_England_' + str(i+1) + '.json'
+    file_name = f'events_England_{str(i + 1)}.json'
     path = os.path.join(str(pathlib.Path().resolve().parents[0]), 'data', 'Wyscout', file_name)
     with open(path) as f:
         data = json.load(f)
@@ -94,10 +95,9 @@ def calulatexG(df, npxG):
     shots["Angle"] = np.where(np.arctan(7.32 * shots["X"] / (shots["X"]**2 + shots["C"]**2 - (7.32/2)**2)) > 0, np.arctan(7.32 * shots["X"] /(shots["X"]**2 + shots["C"]**2 - (7.32/2)**2)), np.arctan(7.32 * shots["X"] /(shots["X"]**2 + shots["C"]**2 - (7.32/2)**2)) + np.pi)
     #if you ever encounter problems (like you have seen that model treats 0 as 1 and 1 as 0) while modelling - change the dependant variable to object 
     shots["Goal"] = shots.tags.apply(lambda x: 1 if {'id':101} in x else 0).astype(object)
-        #headers have id = 403
     headers = shots.loc[shots.apply (lambda x:{'id':403} in x.tags, axis = 1)]
     non_headers = shots.drop(headers.index)
-    
+
     headers_model = smf.glm(formula="Goal ~ Distance + Angle" , data=headers, 
                                family=sm.families.Binomial()).fit()
     #non-headers
@@ -106,14 +106,14 @@ def calulatexG(df, npxG):
     #assigning xG
     #headers
     b_head = headers_model.params
-    xG = 1/(1+np.exp(b_head[0]+b_head[1]*headers['Distance'] + b_head[2]*headers['Angle'])) 
+    xG = 1/(1+np.exp(b_head[0]+b_head[1]*headers['Distance'] + b_head[2]*headers['Angle']))
     headers = headers.assign(xG = xG)
 
     #non-headers 
     b_nhead = nonheaders_model.params
-    xG = 1/(1+np.exp(b_nhead[0]+b_nhead[1]*non_headers['Distance'] + b_nhead[2]*non_headers['Angle'])) 
+    xG = 1/(1+np.exp(b_nhead[0]+b_nhead[1]*non_headers['Distance'] + b_nhead[2]*non_headers['Angle']))
     non_headers = non_headers.assign(xG = xG)
-    
+
     if npxG == False:
         #find pens
         penalties = df.loc[df["subEventName"] == "Penalty"]
@@ -121,15 +121,22 @@ def calulatexG(df, npxG):
         penalties = penalties.assign(xG = 0.8)
         #concat, group and sum
         all_shots_xg = pd.concat([non_headers[["playerId", "xG"]], headers[["playerId", "xG"]], penalties[["playerId", "xG"]]])
-        xG_sum = all_shots_xg.groupby(["playerId"])["xG"].sum().sort_values(ascending = False).reset_index()
+        return (
+            all_shots_xg.groupby(["playerId"])["xG"]
+            .sum()
+            .sort_values(ascending=False)
+            .reset_index()
+        )
     else:
         #concat, group and sum
-        all_shots_xg = pd.concat([non_headers[["playerId", "xG"]], headers[["playerId", "xG"]]]) 
+        all_shots_xg = pd.concat([non_headers[["playerId", "xG"]], headers[["playerId", "xG"]]])
         all_shots_xg.rename(columns = {"xG": "npxG"}, inplace = True)
-        xG_sum = all_shots_xg.groupby(["playerId"])["npxG"].sum().sort_values(ascending = False).reset_index()
-    #group by player and sum 
-    
-    return xG_sum
+        return (
+            all_shots_xg.groupby(["playerId"])["npxG"]
+            .sum()
+            .sort_values(ascending=False)
+            .reset_index()
+        )
 
 #making function
 npxg = calulatexG(train, npxG = True)
@@ -172,23 +179,21 @@ def FinalThird(df):
     passes["y"] = passes.positions.apply(lambda cell: (100 - cell[0]['y']) * 68/100)
     passes["end_x"] = passes.positions.apply(lambda cell: (cell[1]['x']) * 105/100)
     passes["end_y"] = passes.positions.apply(lambda cell: (100 - cell[1]['y']) * 68/100)
-    
+
     #get accurate passes
     accurate_passes = passes.loc[passes.apply (lambda x:{'id':1801} in x.tags, axis = 1)]
     #get passes into final third
     final_third_passes = accurate_passes.loc[accurate_passes["end_x"] > 2*105/3]
-    
+
     #passes into final third by player
     ftp_player = final_third_passes.groupby(["playerId"]).end_x.count().reset_index()
     ftp_player.rename(columns = {'end_x':'final_third_passes'}, inplace=True)
-    
+
     #receptions of accurate passes in the final third
     rtp_player = final_third_passes.groupby(["nextPlayerId"]).end_x.count().reset_index()
     rtp_player.rename(columns = {'end_x':'final_third_receptions', "nextPlayerId": "playerId"}, inplace=True)
-    
-    #outer join not to lose values
-    final_third = ftp_player.merge(rtp_player, how = "outer", on = ["playerId"])
-    return final_third
+
+    return ftp_player.merge(rtp_player, how = "outer", on = ["playerId"])
 
 final_third = FinalThird(train)
 #investigate structure
@@ -219,21 +224,19 @@ def wonDuels(df):
     air_duels = df.loc[df["subEventName"] == "Air duel"]
     #703 is the id of a won duel
     won_air_duels = air_duels.loc[air_duels.apply (lambda x:{'id':703} in x.tags, axis = 1)]
-    
+
     #group and sum air duels
     wad_player =  won_air_duels.groupby(["playerId"]).eventId.count().reset_index()
     wad_player.rename(columns = {'eventId':'air_duels_won'}, inplace=True)
-    
+
     #find ground duels won
     ground_duels = df.loc[df["subEventName"].isin(["Ground attacking duel"])]
     won_ground_duels = ground_duels.loc[ground_duels.apply (lambda x:{'id':703} in x.tags, axis = 1)]
-    
+
     wgd_player =  won_ground_duels.groupby(["playerId"]).eventId.count().reset_index()
     wgd_player.rename(columns = {'eventId':'ground_duels_won'}, inplace=True)
-    
-    #outer join
-    duels_won = wgd_player.merge(wad_player, how = "outer", on = ["playerId"])
-    return duels_won
+
+    return wgd_player.merge(wad_player, how = "outer", on = ["playerId"])
 
 duels = wonDuels(train)
 #investigate structure
@@ -302,21 +305,22 @@ def GoalsAssistsKeyPasses(df):
     assists = passes.loc[passes.apply (lambda x:{'id':301} in x.tags, axis = 1)]
     #get key passes
     key_passes = passes.loc[passes.apply (lambda x:{'id':302} in x.tags, axis = 1)]
-    
+
     #goals by player
     g_player =  goals.groupby(["playerId"]).eventId.count().reset_index()
     g_player.rename(columns = {'eventId':'goals'}, inplace=True)
-    
+
     #assists by player
     a_player =  assists.groupby(["playerId"]).eventId.count().reset_index()
     a_player.rename(columns = {'eventId':'assists'}, inplace=True)
-    
+
     #key passes by player
     kp_player =  key_passes.groupby(["playerId"]).eventId.count().reset_index()
     kp_player.rename(columns = {'eventId':'key_passes'}, inplace=True)
-    
-    data = g_player.merge(a_player, how = "outer", on = ["playerId"]).merge(kp_player, how = "outer", on = ["playerId"])
-    return data
+
+    return g_player.merge(a_player, how="outer", on=["playerId"]).merge(
+        kp_player, how="outer", on=["playerId"]
+    )
 
 gakp = GoalsAssistsKeyPasses(train)
 #investigate structure 
@@ -381,7 +385,7 @@ summary_per_90 = pd.DataFrame()
 summary_per_90["shortName"] = summary["shortName"]
 for column in summary.columns[2:-1]:
     summary_per_90[column + "_per90"] = summary.apply(lambda x: x[column]*90/x["minutesPlayed"], axis = 1)
-    
+
 ##############################################################################
 # Finding values for player
 # ----------------------------
@@ -499,11 +503,11 @@ for i, row in minutes_per_game.iterrows():
     #take player id, team id and match id, minute in and minute out
     player_id, team_id, match_id = row["playerId"], row["teamId"], row["matchId"]
     #create a key in dictionary if player encounterd first time
-    if not str(player_id) in possesion_dict.keys():
+    if str(player_id) not in possesion_dict:
         possesion_dict[str(player_id)] = {'team_passes': 0, 'all_passes' : 0}
     min_in = row["player_in_min"]*60
     min_out = row["player_out_min"]*60
-    
+
     #get the dataframe of events from the game
     match_df = train.loc[train["matchId"] == match_id].copy()
     #add to 2H the highest value of 1H

@@ -10,6 +10,7 @@ This code is adapted from
 https://dashee87.github.io/football/python/predicting-football-results-with-statistical-modelling/
 """
 
+
 # importing the tools required for the Poisson regression model
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
@@ -62,14 +63,18 @@ home_score_rate=poisson_model.predict(pd.DataFrame(data={'team': home_team, 'opp
                                        'home':1},index=[1]))
 away_score_rate=poisson_model.predict(pd.DataFrame(data={'team': away_team, 'opponent': home_team,
                                        'home':0},index=[1]))
-print(home_team + ' against ' + away_team + ' expect to score: ' + str(home_score_rate))
-print(away_team + ' against ' + home_team + ' expect to score: ' + str(away_score_rate))
+print(
+    f'{home_team} against {away_team} expect to score: {str(home_score_rate)}'
+)
+print(
+    f'{away_team} against {home_team} expect to score: {str(away_score_rate)}'
+)
 
 #Lets just get a result
 home_goals=np.random.poisson(home_score_rate)
 away_goals=np.random.poisson(away_score_rate)
-print(home_team + ': ' + str(home_goals[0]))
-print(away_team + ': '  + str(away_goals[0]))
+print(f'{home_team}: {str(home_goals[0])}')
+print(f'{away_team}: {str(away_goals[0])}')
 
 
 

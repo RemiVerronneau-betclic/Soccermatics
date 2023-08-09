@@ -5,13 +5,14 @@ Possesion Chains
 Create Possesion Chains
 """
 
+
 import pandas as pd
 import numpy as np
 import json
 # plotting
 import os
 import pathlib
-import warnings 
+import warnings
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
 from mplsoccer import Pitch
@@ -29,7 +30,7 @@ warnings.filterwarnings('ignore')
 
 df = pd.DataFrame()
 for i in range(13):
-    file_name = 'events_England_' + str(i+1) + '.json'
+    file_name = f'events_England_{str(i + 1)}.json'
     path = os.path.join(str(pathlib.Path().resolve().parents[0]), 'data', 'Wyscout', file_name)
     with open(path) as f:
         data = json.load(f)
@@ -98,17 +99,17 @@ def isolateChains(df):
     chain = 0
     df["possesion_chain"] = 0
     df["possesion_chain_team"] = 0
-    
+
     for i, row in df.iterrows():
         #add value
         df.at[i, "possesion_chain"] = chain
         df.at[i, "possesion_chain_team"] = chain_team
         # if pass not accurate/lost duel, add 1 to stop criterion
-        if row["eventName"] == "Pass" or row["eventName"] == "Duel":
+        if row["eventName"] in ["Pass", "Duel"]:
             if row["teamId"] == chain_team and {"id": 1802} in row["tags"]:
                     stop_criterion += 1
             if row["teamId"] != chain_team and {"id": 1801} in row["tags"]:
-                    stop_criterion += 1   
+                    stop_criterion += 1
         #if ball intercepted properly add 2            
         if row["eventName"] == "Others on the ball":
                if row["teamId"] == row["nextTeamId"]:

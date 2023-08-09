@@ -5,6 +5,7 @@ In this tutorial we demonstrate how to check if values are significantly differe
 using z-tests and t-tests
 """
 
+
 import pandas as pd
 import numpy as np
 import json
@@ -13,7 +14,7 @@ import matplotlib.pyplot as plt
 #opening data
 import os
 import pathlib
-import warnings  
+import warnings
 pd.options.mode.chained_assignment = None
 warnings.filterwarnings('ignore')
 
@@ -28,12 +29,12 @@ warnings.filterwarnings('ignore')
 #open events
 train = pd.DataFrame()
 for i in range(13):
-    file_name = 'events_England_' + str(i+1) + '.json'
+    file_name = f'events_England_{str(i + 1)}.json'
     path = os.path.join(str(pathlib.Path().resolve()), 'data', 'Wyscout', file_name)
     with open(path) as f:
         data = json.load(f)
     train = pd.concat([train, pd.DataFrame(data)])
-    
+
 #open team data
 path = os.path.join(str(pathlib.Path().resolve()),"data", 'Wyscout', 'teams.json')
 with open(path) as f:
@@ -41,14 +42,14 @@ with open(path) as f:
 
 teams_df = pd.DataFrame(teams)
 teams_df = teams_df.rename(columns={"wyId": "teamId"})
-    
+
 ##############################################################################
 # Preparing the dataset
 # ----------------------------
 #
 # First, we take out corners. Then, we sum them by team. We also merge it together with team dataframe to keep their names.
 # Then we repeat the same, but calculate corners taken by each team per game. 
-    
+
 #get corners
 corners = train.loc[train["subEventName"] == "Corner"]
 #count corners by team

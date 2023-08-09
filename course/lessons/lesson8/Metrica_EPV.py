@@ -39,8 +39,7 @@ def load_EPV_grid(fname='EPV_grid.csv'):
         EPV: The EPV surface (default is a (32,50) grid)
     
     """
-    epv = np.loadtxt(fname, delimiter=',')
-    return epv
+    return np.loadtxt(fname, delimiter=',')
     
 def get_EPV_at_location(position,EPV,attack_direction,field_dimen=(106.,68.)):
     """ get_EPV_at_location
@@ -63,15 +62,14 @@ def get_EPV_at_location(position,EPV,attack_direction,field_dimen=(106.,68.)):
     x,y = position
     if abs(x)>field_dimen[0]/2. or abs(y)>field_dimen[1]/2.:
         return 0.0 # Position is off the field, EPV is zero
-    else:
-        if attack_direction==-1:
-            EPV = np.fliplr(EPV)
-        ny,nx = EPV.shape
-        dx = field_dimen[0]/float(nx)
-        dy = field_dimen[1]/float(ny)
-        ix = (x+field_dimen[0]/2.-0.0001)/dx
-        iy = (y+field_dimen[1]/2.-0.0001)/dy
-        return EPV[int(iy),int(ix)]
+    if attack_direction==-1:
+        EPV = np.fliplr(EPV)
+    ny,nx = EPV.shape
+    dx = field_dimen[0]/float(nx)
+    dy = field_dimen[1]/float(ny)
+    ix = (x+field_dimen[0]/2.-0.0001)/dx
+    iy = (y+field_dimen[1]/2.-0.0001)/dy
+    return EPV[int(iy),int(ix)]
     
 def calculate_epv_added( event_id, events, tracking_home, tracking_away, GK_numbers, EPV, params):
     """ calculate_epv_added
@@ -157,45 +155,41 @@ def find_max_value_added_target( event_id, events, tracking_home, tracking_away,
     pass_start_pos = np.array([events.loc[event_id]['Start X'],events.loc[event_id]['Start Y']])
     pass_frame = events.loc[event_id]['Start Frame']
     pass_team = events.loc[event_id].Team
-    
+
     # direction of play for atacking team (so we know whether to flip the EPV grid)
     home_attack_direction = mio.find_playing_direction(tracking_home,'Home')
-    if pass_team=='Home':
-        attack_direction = home_attack_direction
-        attacking_players = mpc.initialise_players(tracking_home.loc[pass_frame],'Home',params,GK_numbers[0])
-        defending_players = mpc.initialise_players(tracking_away.loc[pass_frame],'Away',params,GK_numbers[1])
-    elif pass_team=='Away':
+    if pass_team == 'Away':
         attack_direction = home_attack_direction*-1
         defending_players = mpc.initialise_players(tracking_home.loc[pass_frame],'Home',params,GK_numbers[0])
         attacking_players = mpc.initialise_players(tracking_away.loc[pass_frame],'Away',params,GK_numbers[1])   
-        
+
+    elif pass_team == 'Home':
+        attack_direction = home_attack_direction
+        attacking_players = mpc.initialise_players(tracking_home.loc[pass_frame],'Home',params,GK_numbers[0])
+        defending_players = mpc.initialise_players(tracking_away.loc[pass_frame],'Away',params,GK_numbers[1])
     # flag any players that are offside
     attacking_players = mpc.check_offsides( attacking_players, defending_players, pass_start_pos, GK_numbers)
-    
+
     # pitch control grid at pass start location
     Patt_start,_ = mpc.calculate_pitch_control_at_target(pass_start_pos, attacking_players, defending_players, pass_start_pos, params)
-    
+
     # EPV at start location
     EPV_start = get_EPV_at_location(pass_start_pos, EPV, attack_direction=attack_direction)
 
     # calculate pitch control surface at moment of the pass
     PPCF,xgrid,ygrid = mpc.generate_pitch_control_for_event(event_id, events, tracking_home, tracking_away, params, GK_numbers, field_dimen = (106.,68.,), n_grid_cells_x = 50, offsides=True)
-    
+
     # EPV surface at instance of the pass
-    if attack_direction == -1:
-        EEPV = np.fliplr(EPV)*PPCF
-    else:
-        EEPV = EPV*PPCF
-        
+    EEPV = np.fliplr(EPV)*PPCF if attack_direction == -1 else EPV*PPCF
     # find indices of the maxEPV
     maxEPV_idx = np.unravel_index(EEPV.argmax(),EEPV.shape)
-    
+
     # Expected EPV at current ball position   
     EEPV_start = Patt_start*EPV_start
-    
+
     # maxEPV_added (difference between max location and current ball location)
     maxEPV_added = EEPV.max() - EEPV_start
-    
+
     # location of maximum
     max_target_location = (xgrid[maxEPV_idx[1]], ygrid[maxEPV_idx[0]])
 

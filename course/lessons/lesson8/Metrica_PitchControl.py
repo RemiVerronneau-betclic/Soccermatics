@@ -79,7 +79,7 @@ def check_offsides( attacking_players, defending_players, ball_position, GK_numb
     # make sure defending goalkeeper is actually on the field!
     assert defending_GK_id in [p.id for p in defending_players], "Defending goalkeeper jersey number not found in defending players"
     # get goalkeeper player object
-    defending_GK = [p for p in defending_players if p.id==defending_GK_id][0]  
+    defending_GK = [p for p in defending_players if p.id==defending_GK_id][0]
     # use defending goalkeeper x position to figure out which half he is defending (-1: left goal, +1: right goal)
     defending_half = np.sign(defending_GK.position[0])
     # find the x-position of the second-deepest defeending player (including GK)
@@ -90,7 +90,7 @@ def check_offsides( attacking_players, defending_players, ball_position, GK_numb
     if verbose:
         for p in attacking_players:
             if p.position[0]*defending_half>offside_line:
-                print("player %s in %s team is offside" % (p.id, p.playername) )
+                print(f"player {p.id} in {p.playername} team is offside")
     attacking_players = [p for p in attacking_players if p.position[0]*defending_half<=offside_line]
     return attacking_players
 
@@ -118,7 +118,7 @@ class player(object):
         self.id = pid
         self.is_gk = self.id == GKid
         self.teamname = teamname
-        self.playername = "%s_%s_" % (teamname,pid)
+        self.playername = f"{teamname}_{pid}_"
         self.vmax = params['max_player_speed'] # player max speed in m/s. Could be individualised
         self.reaction_time = params['reaction_time'] # player reaction time in 's'. Could be individualised
         self.tti_sigma = params['tti_sigma'] # standard deviation of sigmoid function (see Eq 4 in Spearman, 2018)
@@ -129,11 +129,15 @@ class player(object):
         self.PPCF = 0. # initialise this for later
         
     def get_position(self,team):
-        self.position = np.array( [ team[self.playername+'x'], team[self.playername+'y'] ] )
+        self.position = np.array(
+            [team[f'{self.playername}x'], team[f'{self.playername}y']]
+        )
         self.inframe = not np.any( np.isnan(self.position) )
         
     def get_velocity(self,team):
-        self.velocity = np.array( [ team[self.playername+'vx'], team[self.playername+'vy'] ] )
+        self.velocity = np.array(
+            [team[f'{self.playername}vx'], team[f'{self.playername}vy']]
+        )
         if np.any( np.isnan(self.velocity) ):
             self.velocity = np.array([0.,0.])
     
@@ -146,9 +150,15 @@ class player(object):
         return self.time_to_intercept
 
     def probability_intercept_ball(self,T):
-        # probability of a player arriving at target location at time 'T' given their expected time_to_intercept (time of arrival), as described in Spearman 2018
-        f = 1/(1. + np.exp( -np.pi/np.sqrt(3.0)/self.tti_sigma * (T-self.time_to_intercept) ) )
-        return f
+        return 1 / (
+            1.0
+            + np.exp(
+                -np.pi
+                / np.sqrt(3.0)
+                / self.tti_sigma
+                * (T - self.time_to_intercept)
+            )
+        )
 
 """ Generate pitch control map """
 
@@ -170,14 +180,14 @@ def default_model_params(time_to_control_veto=3):
     
     """
     # key parameters for the model, as described in Spearman 2018
-    params = {}
-    # model parameters
-    params['max_player_accel'] = 7. # maximum player acceleration m/s/s, not used in this implementation
-    params['max_player_speed'] = 5. # maximum player speed m/s
-    params['reaction_time'] = 0.7 # seconds, time taken for player to react and change trajectory. Roughly determined as vmax/amax
-    params['tti_sigma'] = 0.45 # Standard deviation of sigmoid function in Spearman 2018 ('s') that determines uncertainty in player arrival time
-    params['kappa_def'] =  1. # kappa parameter in Spearman 2018 (=1.72 in the paper) that gives the advantage defending players to control ball, I have set to 1 so that home & away players have same ball control probability
-    params['lambda_att'] = 4.3 # ball control parameter for attacking team
+    params = {
+        'max_player_accel': 7.0,
+        'max_player_speed': 5.0,
+        'reaction_time': 0.7,
+        'tti_sigma': 0.45,
+        'kappa_def': 1.0,
+        'lambda_att': 4.3,
+    }
     params['lambda_def'] = 4.3 * params['kappa_def'] # ball control parameter for defending team
     params['lambda_gk'] = params['lambda_def']*3.0 # make goal keepers must quicker to control ball (because they can catch it)
     params['average_ball_speed'] = 15. # average ball travel speed in m/s
